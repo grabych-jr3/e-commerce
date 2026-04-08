@@ -1,4 +1,4 @@
-package com.ogidazepam.e_commerce.service;
+package com.ogidazepam.e_commerce.service.security;
 
 import com.ogidazepam.e_commerce.model.Customer;
 import com.ogidazepam.e_commerce.repository.CustomerRepository;
