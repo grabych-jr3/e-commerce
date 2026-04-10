@@ -69,8 +69,13 @@ public class CartService {
 
     // ! Користувач може змінювати тільки свої предмети в кошику
     public void changeQuantity(ChangeQuantityDTO dto, Customer customer) {
-        CartItem cartItem = cartItemRepository.findById(dto.cartItemId())
-                .orElseThrow(() -> new EntityNotFoundException("Cart Item not found"));
+        Cart cart = cartRepository.findByCustomerId(customer.getId())
+                .orElseThrow(() -> new EntityNotFoundException("Cart not found"));
+
+        CartItem cartItem = cart.getCartItemList().stream()
+                .filter(c -> c.getId() == dto.cartItemId())
+                .findFirst()
+                .orElseThrow(() -> new EntityNotFoundException("Cart item not found"));
 
         Product product = productRepository.findById(cartItem.getProduct().getId())
                 .orElseThrow(() -> new EntityNotFoundException("Product not found"));
@@ -80,6 +85,7 @@ public class CartService {
         }
 
         cartItem.setQuantity(dto.quantity());
+        cartItemRepository.save(cartItem);
     }
 
     // ! Користувач може видаляти тільки свої предмети в кошику
