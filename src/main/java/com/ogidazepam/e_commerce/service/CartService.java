@@ -13,7 +13,6 @@ import com.ogidazepam.e_commerce.repository.CartRepository;
 import com.ogidazepam.e_commerce.repository.ProductRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,9 +30,6 @@ public class CartService {
 
     /* TODO
         1. Правильно обробити exceptions
-        2. Якщо користувач ще раз відправить запит, то CartItem створиться заново,
-        але кількість предметів у Product відніметься 2 рази
-        3. Налаштувати безпеку для Update та Delete методів
      */
     public void addToCart(CartItemAddingDTO dto, Customer customer) {
         Cart cart = cartRepository.findByCustomerId(customer.getId())
@@ -67,35 +63,22 @@ public class CartService {
         )).toList();
     }
 
-    // ! Користувач може змінювати тільки свої предмети в кошику
     public void changeQuantity(ChangeQuantityDTO dto, Customer customer) {
-        Cart cart = cartRepository.findByCustomerId(customer.getId())
-                .orElseThrow(() -> new EntityNotFoundException("Cart not found"));
-
-        CartItem cartItem = cart.getCartItemList().stream()
-                .filter(c -> c.getId() == dto.cartItemId())
-                .findFirst()
+        CartItem cartItem = cartItemRepository.findByIdAndCartCustomerId(dto.cartItemId(), customer.getId())
                 .orElseThrow(() -> new EntityNotFoundException("Cart item not found"));
 
-        Product product = productRepository.findById(cartItem.getProduct().getId())
-                .orElseThrow(() -> new EntityNotFoundException("Product not found"));
+        Product product = cartItem.getProduct();
 
         if (product.getQuantity() < dto.quantity()){
             throw new RuntimeException("You can't order more than the store has");
         }
 
         cartItem.setQuantity(dto.quantity());
-        cartItemRepository.save(cartItem);
+        cartItem.setPrice(product.getPrice()*dto.quantity());
     }
 
-    // ! Користувач може видаляти тільки свої предмети в кошику
     public void removeItemFromCart(RemoveCartItemDTO dto, Customer customer){
-        Cart cart = cartRepository.findByCustomerId(customer.getId())
-                .orElseThrow(() -> new EntityNotFoundException("Cart not found"));
-
-        CartItem cartItem = cart.getCartItemList().stream()
-                .filter(c -> c.getId() == dto.cartItemId())
-                .findFirst()
+        CartItem cartItem = cartItemRepository.findByIdAndCartCustomerId(dto.cartItemId(), customer.getId())
                 .orElseThrow(() -> new EntityNotFoundException("Cart item not found"));
 
         cartItemRepository.delete(cartItem);

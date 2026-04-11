@@ -22,8 +22,8 @@ public class ProductController {
     private final ProductService productService;
 
     @GetMapping
-    public ResponseEntity<List<ProductViewDTO>> findAllProducts(@RequestBody @Valid ProductViewDTO dto){
-        List<ProductViewDTO> dtoList = productService.findAllProducts(dto);
+    public ResponseEntity<List<ProductViewDTO>> findAllProducts(){
+        List<ProductViewDTO> dtoList = productService.findAllProducts();
         return ResponseEntity.ok(dtoList);
     }
 
