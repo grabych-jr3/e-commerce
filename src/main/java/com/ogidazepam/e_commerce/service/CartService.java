@@ -13,7 +13,6 @@ import com.ogidazepam.e_commerce.repository.CartRepository;
 import com.ogidazepam.e_commerce.repository.ProductRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,9 +30,7 @@ public class CartService {
 
     /* TODO
         1. Правильно обробити exceptions
-        2. Якщо користувач ще раз відправить запит, то CartItem створиться заново,
-        але кількість предметів у Product відніметься 2 рази
-        3. Налаштувати безпеку для Update та Delete методів
+        2. Налаштувати безпеку для Update та Delete методів
      */
     public void addToCart(CartItemAddingDTO dto, Customer customer) {
         Cart cart = cartRepository.findByCustomerId(customer.getId())

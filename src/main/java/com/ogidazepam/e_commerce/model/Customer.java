@@ -12,6 +12,8 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "customer")
@@ -43,6 +45,9 @@ public class Customer {
 
     @UpdateTimestamp
     private Instant updatedAt;
+
+    @OneToMany(mappedBy = "customer")
+    private List<Orders> orders = new ArrayList<>();
 
     public Customer(String email, String password, String firstName, String lastName) {
         this.email = email;
