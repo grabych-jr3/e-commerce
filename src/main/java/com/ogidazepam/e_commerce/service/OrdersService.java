@@ -1,5 +1,6 @@
 package com.ogidazepam.e_commerce.service;
 
+import com.ogidazepam.e_commerce.dto.OrderViewDTO;
 import com.ogidazepam.e_commerce.enums.OrderStatus;
 import com.ogidazepam.e_commerce.model.*;
 import com.ogidazepam.e_commerce.repository.CartRepository;
@@ -9,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
@@ -27,10 +29,10 @@ public class OrdersService {
 
         order.setOrderItemList(
                 cart.getCartItemList().stream().map(c -> new OrderItem(
+                        c.getProduct().getName(),
                         c.getQuantity(),
                         c.getPrice(),
-                        order,
-                        c.getProduct()
+                        order
                 )).collect(Collectors.toList())
         );
 
@@ -46,5 +48,24 @@ public class OrdersService {
 
 
         orderRepository.save(order);
+    }
+
+    public List<OrderViewDTO> findAllOrders(Customer customer) {
+        List<Orders> orders = orderRepository.findAllByCustomerId(customer.getId());
+        return orders.stream().map(o -> new OrderViewDTO(
+                o.getStatus(),
+                o.getTotalAmount()
+        )).toList();
+    }
+
+
+    public OrderViewDTO findOrderById(long id, Customer customer) {
+        Orders order = orderRepository.findByIdAndCustomerId(id, customer.getId())
+                .orElseThrow(() -> new EntityNotFoundException("Order not found"));
+
+        return new OrderViewDTO(
+                order.getStatus(),
+                order.getTotalAmount()
+        );
     }
 }

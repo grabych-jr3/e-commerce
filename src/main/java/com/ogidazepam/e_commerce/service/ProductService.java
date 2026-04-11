@@ -5,6 +5,7 @@ import com.ogidazepam.e_commerce.model.Product;
 import com.ogidazepam.e_commerce.repository.ProductRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,7 +21,7 @@ public class ProductService {
         this.productRepository = productRepository;
     }
 
-    public List<ProductViewDTO> findAllProducts(ProductViewDTO dto) {
+    public List<ProductViewDTO> findAllProducts() {
         List<Product> products = productRepository.findAll();
         return products.stream().map(p -> new ProductViewDTO(
                 p.getName(),
@@ -42,6 +43,7 @@ public class ProductService {
         );
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     public void saveProduct(@Valid ProductViewDTO dto) {
         Product product = new Product(
                 dto.name(),
@@ -53,6 +55,7 @@ public class ProductService {
         productRepository.save(product);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     public void updateProduct(long id, @Valid ProductViewDTO dto) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Product not found"));
@@ -63,6 +66,7 @@ public class ProductService {
         product.setQuantity(dto.quantity());
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     public void deleteProduct(long id){
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Product not found"));

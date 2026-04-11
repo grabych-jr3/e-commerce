@@ -2,6 +2,7 @@ package com.ogidazepam.e_commerce.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,6 +18,9 @@ public class OrderItem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
+    @NotBlank
+    private String productName;
+
     @NotNull
     @Min(1)
     private int quantity;
@@ -26,17 +30,13 @@ public class OrderItem {
     private double price;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "orders_id", referencedColumnName = "id")
+    @JoinColumn(name = "order_id", referencedColumnName = "id")
     private Orders order;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id", referencedColumnName = "id")
-    private Product product;
-
-    public OrderItem(int quantity, double price, Orders order, Product product) {
+    public OrderItem(String productName, int quantity, double price, Orders order) {
+        this.productName = productName;
         this.quantity = quantity;
         this.price = price;
         this.order = order;
-        this.product = product;
     }
 }
