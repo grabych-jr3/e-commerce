@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -28,7 +29,7 @@ public class ProductService {
                 p.getDescription(),
                 p.getPrice(),
                 p.getQuantity()
-        )).toList();
+        )).collect(Collectors.toList());
     }
 
     public ProductViewDTO findProduct(long id) {
@@ -72,5 +73,15 @@ public class ProductService {
                 .orElseThrow(() -> new EntityNotFoundException("Product not found"));
 
         productRepository.delete(product);
+    }
+
+    public List<ProductViewDTO> findProductsByName(String name) {
+        List<Product> products = productRepository.findAllByNameContainingIgnoreCase(name);
+        return products.stream().map(p -> new ProductViewDTO(
+                p.getName(),
+                p.getDescription(),
+                p.getPrice(),
+                p.getQuantity()
+        )).collect(Collectors.toList());
     }
 }

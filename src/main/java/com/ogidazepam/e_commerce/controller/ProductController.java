@@ -10,10 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-/* TODO
-    Налаштувати безпеку для методів POST, PATCH, DELETE
-    Тільки адмін має право на ці методи
- */
+
 @RestController
 @RequestMapping("/api/v1/products")
 @RequiredArgsConstructor
@@ -31,6 +28,12 @@ public class ProductController {
     public ResponseEntity<ProductViewDTO> findProduct(@PathVariable long id){
         ProductViewDTO dto = productService.findProduct(id);
         return ResponseEntity.ok(dto);
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<ProductViewDTO>> findProductByName(@RequestParam String name){
+        List<ProductViewDTO> dtos = productService.findProductsByName(name);
+        return ResponseEntity.ok(dtos);
     }
 
     // !ADMIN ONLY
