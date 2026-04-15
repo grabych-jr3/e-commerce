@@ -48,4 +48,10 @@ public class CartController {
         cartService.removeItemFromCart(dto,  userDetails.customer());
         return ResponseEntity.noContent().build();
     }
+
+    @DeleteMapping("/clear-cart")
+    public ResponseEntity<Void> clearCart(@AuthenticationPrincipal CustomUserDetails userDetails){
+        cartService.clearTheCart(userDetails.customer());
+        return ResponseEntity.noContent().build();
+    }
 }

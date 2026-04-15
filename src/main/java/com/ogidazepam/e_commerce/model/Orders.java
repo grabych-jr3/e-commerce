@@ -16,7 +16,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "orders")
-@Getter @Setter @NoArgsConstructor @ToString
+@Getter @Setter @NoArgsConstructor
 public class Orders {
 
     @Id
@@ -41,6 +41,9 @@ public class Orders {
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
     private List<OrderItem> orderItemList;
+
+    @OneToMany(mappedBy = "order")
+    private List<Payment> paymentList;
 
     public Orders(OrderStatus status, double totalAmount, Customer customer) {
         this.status = status;

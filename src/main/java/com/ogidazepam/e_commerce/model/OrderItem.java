@@ -29,14 +29,17 @@ public class OrderItem {
     @Min(0)
     private double price;
 
+    private long productId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", referencedColumnName = "id")
     private Orders order;
 
-    public OrderItem(String productName, int quantity, double price, Orders order) {
+    public OrderItem(String productName, int quantity, double price, Orders order, long productId) {
         this.productName = productName;
         this.quantity = quantity;
         this.price = price;
         this.order = order;
+        this.productId = productId;
     }
 }

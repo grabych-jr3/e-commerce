@@ -32,14 +32,15 @@ public class OrdersService {
                         c.getProduct().getName(),
                         c.getQuantity(),
                         c.getPrice(),
-                        order
+                        order,
+                        c.getProduct().getId()
                 )).collect(Collectors.toList())
         );
 
         double total_amount = 0;
 
         for(OrderItem orderItem : order.getOrderItemList()){
-            total_amount += orderItem.getPrice();
+            total_amount += orderItem.getPrice() * orderItem.getQuantity();
         }
 
         order.setStatus(OrderStatus.PROCESSING);
