@@ -18,7 +18,6 @@ import java.util.List;
 @Entity
 @Table(name = "customer")
 @Getter @Setter @NoArgsConstructor
-@ToString
 public class Customer {
 
     @Id

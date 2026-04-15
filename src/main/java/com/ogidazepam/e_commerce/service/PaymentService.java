@@ -1,7 +1,10 @@
 package com.ogidazepam.e_commerce.service;
 
+import com.ogidazepam.e_commerce.dto.OrderByIdDTO;
 import com.ogidazepam.e_commerce.enums.OrderStatus;
 import com.ogidazepam.e_commerce.enums.PaymentStatus;
+import com.ogidazepam.e_commerce.exceptions.OrderAlreadyPaidException;
+import com.ogidazepam.e_commerce.exceptions.ProductOutOfStockException;
 import com.ogidazepam.e_commerce.model.*;
 import com.ogidazepam.e_commerce.repository.OrdersRepository;
 import com.ogidazepam.e_commerce.repository.PaymentRepository;
@@ -17,7 +20,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 @Service
 @Transactional
@@ -37,14 +39,14 @@ public class PaymentService {
         this.paymentRepository = paymentRepository;
     }
 
-    public String checkout(Customer customer, Map<String, Object> map) throws StripeException {
+    public String checkout(Customer customer, OrderByIdDTO dto) throws StripeException {
         Stripe.apiKey = STRIPE_SECRET;
 
-        Orders order = ordersRepository.findByIdAndCustomerId(((Number)map.get("orderId")).longValue(), customer.getId())
+        Orders order = ordersRepository.findByIdAndCustomerId(dto.orderId(), customer.getId())
                 .orElseThrow(() -> new EntityNotFoundException("Order not found"));
 
         if(order.getStatus().equals(OrderStatus.COMPLETED)){
-            return "The order has been already paid";
+            throw new OrderAlreadyPaidException("Your order " + order.getId() + " is already paid");
         }
 
         for (OrderItem orderItem : order.getOrderItemList()){
@@ -52,7 +54,7 @@ public class PaymentService {
                     .orElseThrow(() -> new EntityNotFoundException("Product not found"));
 
             if (product.getQuantity() < orderItem.getQuantity()){
-                throw new RuntimeException("Not enough product quantity in the store");
+                throw new ProductOutOfStockException("Not enough product quantity in the store");
             }
         }
 
@@ -63,8 +65,8 @@ public class PaymentService {
                             .setQuantity((long) orderItem.getQuantity())
                             .setPriceData(
                                     SessionCreateParams.LineItem.PriceData.builder()
-                                            .setCurrency("usd")
-                                            .setUnitAmount((long)orderItem.getPrice()*100)
+                                            .setCurrency("pln")
+                                            .setUnitAmount((long)orderItem.getUnitPrice()*100)
                                             .setProductData(
                                                     SessionCreateParams.LineItem.PriceData.ProductData.builder()
                                                             .setName(orderItem.getProductName())

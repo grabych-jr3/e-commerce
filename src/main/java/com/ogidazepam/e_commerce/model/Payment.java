@@ -15,7 +15,7 @@ import java.time.Instant;
 
 @Entity
 @Table(name = "payment")
-@Getter @Setter @NoArgsConstructor @ToString
+@Getter @Setter @NoArgsConstructor
 public class Payment {
 
     @Id

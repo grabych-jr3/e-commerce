@@ -7,11 +7,10 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import lombok.ToString;
 
 @Entity
 @Table(name = "order_item")
-@Getter @Setter @NoArgsConstructor @ToString
+@Getter @Setter @NoArgsConstructor
 public class OrderItem {
 
     @Id
@@ -27,7 +26,7 @@ public class OrderItem {
 
     @NotNull
     @Min(0)
-    private double price;
+    private double unitPrice;
 
     private long productId;
 
@@ -38,7 +37,7 @@ public class OrderItem {
     public OrderItem(String productName, int quantity, double price, Orders order, long productId) {
         this.productName = productName;
         this.quantity = quantity;
-        this.price = price;
+        this.unitPrice = price;
         this.order = order;
         this.productId = productId;
     }

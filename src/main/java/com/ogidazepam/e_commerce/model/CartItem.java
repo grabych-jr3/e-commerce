@@ -6,11 +6,10 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import lombok.ToString;
 
 @Entity
 @Table(name = "cart_item")
-@Getter @Setter @NoArgsConstructor @ToString
+@Getter @Setter @NoArgsConstructor
 public class CartItem {
 
     @Id
@@ -23,7 +22,7 @@ public class CartItem {
 
     // TODO розібратися з check ( price > 0 )
     @NotNull
-    private double price;
+    private double unitPrice;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cart_id", referencedColumnName = "id")
@@ -35,7 +34,7 @@ public class CartItem {
 
     public CartItem(int quantity, double price, Cart cart, Product product) {
         this.quantity = quantity;
-        this.price = price;
+        this.unitPrice = price;
         this.cart = cart;
         this.product = product;
     }

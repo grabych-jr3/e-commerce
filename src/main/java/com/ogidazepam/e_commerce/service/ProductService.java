@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@Transactional
+@Transactional(readOnly = true)
 public class ProductService {
 
     private final ProductRepository productRepository;
@@ -44,6 +44,17 @@ public class ProductService {
         );
     }
 
+    public List<ProductViewDTO> findProductsByName(String name) {
+        List<Product> products = productRepository.findAllByNameContainingIgnoreCase(name);
+        return products.stream().map(p -> new ProductViewDTO(
+                p.getName(),
+                p.getDescription(),
+                p.getPrice(),
+                p.getQuantity()
+        )).collect(Collectors.toList());
+    }
+
+    @Transactional
     @PreAuthorize("hasRole('ADMIN')")
     public void saveProduct(@Valid ProductViewDTO dto) {
         Product product = new Product(
@@ -56,6 +67,7 @@ public class ProductService {
         productRepository.save(product);
     }
 
+    @Transactional
     @PreAuthorize("hasRole('ADMIN')")
     public void updateProduct(long id, @Valid ProductViewDTO dto) {
         Product product = productRepository.findById(id)
@@ -67,6 +79,7 @@ public class ProductService {
         product.setQuantity(dto.quantity());
     }
 
+    @Transactional
     @PreAuthorize("hasRole('ADMIN')")
     public void deleteProduct(long id){
         Product product = productRepository.findById(id)
@@ -75,13 +88,4 @@ public class ProductService {
         productRepository.delete(product);
     }
 
-    public List<ProductViewDTO> findProductsByName(String name) {
-        List<Product> products = productRepository.findAllByNameContainingIgnoreCase(name);
-        return products.stream().map(p -> new ProductViewDTO(
-                p.getName(),
-                p.getDescription(),
-                p.getPrice(),
-                p.getQuantity()
-        )).collect(Collectors.toList());
-    }
 }
