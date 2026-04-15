@@ -1,6 +1,5 @@
 package com.ogidazepam.e_commerce.controller;
 
-import com.ogidazepam.e_commerce.dto.OrderItemViewDTO;
 import com.ogidazepam.e_commerce.dto.OrderViewDTO;
 import com.ogidazepam.e_commerce.service.OrdersService;
 import com.ogidazepam.e_commerce.util.CustomUserDetails;

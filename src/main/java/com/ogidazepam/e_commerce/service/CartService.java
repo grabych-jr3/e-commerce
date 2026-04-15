@@ -74,7 +74,6 @@ public class CartService {
         }
 
         cartItem.setQuantity(dto.quantity());
-        cartItem.setPrice(product.getPrice()*dto.quantity());
     }
 
     public void removeItemFromCart(RemoveCartItemDTO dto, Customer customer){
@@ -82,5 +81,12 @@ public class CartService {
                 .orElseThrow(() -> new EntityNotFoundException("Cart item not found"));
 
         cartItemRepository.delete(cartItem);
+    }
+
+    public void clearTheCart(Customer customer){
+        Cart cart = cartRepository.findByCustomerId(customer.getId())
+                .orElseThrow(() -> new EntityNotFoundException("Cart not found"));
+
+        cartItemRepository.deleteAll(cart.getCartItemList());
     }
 }
