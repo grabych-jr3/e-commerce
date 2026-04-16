@@ -1,10 +1,13 @@
 package com.ogidazepam.e_commerce.config;
 
+import com.ogidazepam.e_commerce.enums.UserRole;
 import com.ogidazepam.e_commerce.filter.JwtAuthenticationFilter;
 import com.ogidazepam.e_commerce.service.security.CustomUserDetailsService;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.ProviderManager;
@@ -39,7 +42,13 @@ public class SecurityConfig {
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .anyRequest().permitAll())
+                        .requestMatchers("/api/v1/auth/**", "/api/v1/products/**").permitAll()
+                        .requestMatchers("/api/v1/payments/webhook").permitAll()
+                        .requestMatchers("/api/v1/orders/**", "/api/v1/cart/**", "/api/v1/payments/**").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/products/**").hasRole(UserRole.ADMIN.name())
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/products/**").hasRole(UserRole.ADMIN.name())
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/products/**").hasRole(UserRole.ADMIN.name())
+                        .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }

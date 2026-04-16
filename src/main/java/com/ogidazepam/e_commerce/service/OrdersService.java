@@ -14,13 +14,14 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@Transactional
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class OrdersService {
 
     private final CartRepository cartRepository;
     private final OrdersRepository orderRepository;
 
+    @Transactional
     public void createOrder(Customer customer) {
         Cart cart = cartRepository.findByCustomerId(customer.getId())
                 .orElseThrow(() -> new EntityNotFoundException("Cart not found"));
@@ -31,7 +32,7 @@ public class OrdersService {
                 cart.getCartItemList().stream().map(c -> new OrderItem(
                         c.getProduct().getName(),
                         c.getQuantity(),
-                        c.getPrice(),
+                        c.getUnitPrice(),
                         order,
                         c.getProduct().getId()
                 )).collect(Collectors.toList())
@@ -40,7 +41,7 @@ public class OrdersService {
         double total_amount = 0;
 
         for(OrderItem orderItem : order.getOrderItemList()){
-            total_amount += orderItem.getPrice() * orderItem.getQuantity();
+            total_amount += orderItem.getUnitPrice() * orderItem.getQuantity();
         }
 
         order.setStatus(OrderStatus.PROCESSING);

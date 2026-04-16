@@ -1,5 +1,6 @@
 package com.ogidazepam.e_commerce.controller;
 
+import com.ogidazepam.e_commerce.dto.OrderByIdDTO;
 import com.ogidazepam.e_commerce.service.PaymentService;
 import com.ogidazepam.e_commerce.util.CustomUserDetails;
 import com.stripe.exception.SignatureVerificationException;
@@ -28,8 +29,8 @@ public class PaymentController {
 
     @PostMapping("/checkout")
     public String checkout(@AuthenticationPrincipal CustomUserDetails userDetails,
-                         @RequestBody Map<String, Object> map) throws StripeException {
-        return paymentService.checkout(userDetails.customer(), map);
+                           @RequestBody OrderByIdDTO dto) throws StripeException {
+        return paymentService.checkout(userDetails.customer(), dto);
     }
 
     @PostMapping("/webhook")
