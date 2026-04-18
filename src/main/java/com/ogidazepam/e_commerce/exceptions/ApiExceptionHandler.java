@@ -40,6 +40,20 @@ public class ApiExceptionHandler {
         return ResponseEntity.badRequest().body(exceptionModel);
     }
 
+    @ExceptionHandler(CartIsEmptyException.class)
+    public ResponseEntity<ExceptionModel> cartIsEmptyException(CartIsEmptyException e){
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+        ExceptionModel exceptionModel = buildExceptionModel(status, e.getMessage());
+        return ResponseEntity.badRequest().body(exceptionModel);
+    }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ExceptionModel> resourceNotFoundException(ResourceNotFoundException e){
+        HttpStatus status = HttpStatus.NOT_FOUND;
+        ExceptionModel exceptionModel = buildExceptionModel(status, e.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(exceptionModel);
+    }
+
     private ExceptionModel buildExceptionModel(HttpStatus status, String message){
         return new ExceptionModel(
                 message,

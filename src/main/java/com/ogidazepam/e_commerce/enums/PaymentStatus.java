@@ -8,7 +8,8 @@ import lombok.RequiredArgsConstructor;
 public enum PaymentStatus {
     CREATED("C"),
     SUCCESS("S"),
-    FAILED("F");
+    FAILED("F"),
+    EXPIRED("E");
 
     private final String code;
 

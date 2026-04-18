@@ -1,9 +1,9 @@
 package com.ogidazepam.e_commerce.service;
 
 import com.ogidazepam.e_commerce.dto.ProductViewDTO;
+import com.ogidazepam.e_commerce.exceptions.ResourceNotFoundException;
 import com.ogidazepam.e_commerce.model.Product;
 import com.ogidazepam.e_commerce.repository.ProductRepository;
-import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
@@ -34,7 +34,7 @@ public class ProductService {
 
     public ProductViewDTO findProduct(long id) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Product not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
         return new ProductViewDTO(
                 product.getName(),
@@ -71,7 +71,7 @@ public class ProductService {
     @PreAuthorize("hasRole('ADMIN')")
     public void updateProduct(long id, @Valid ProductViewDTO dto) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Product not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
         product.setName(dto.name());
         product.setDescription(dto.description());
@@ -83,7 +83,7 @@ public class ProductService {
     @PreAuthorize("hasRole('ADMIN')")
     public void deleteProduct(long id){
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Product not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
         productRepository.delete(product);
     }

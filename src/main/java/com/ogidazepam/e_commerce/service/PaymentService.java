@@ -5,6 +5,7 @@ import com.ogidazepam.e_commerce.enums.OrderStatus;
 import com.ogidazepam.e_commerce.enums.PaymentStatus;
 import com.ogidazepam.e_commerce.exceptions.OrderAlreadyPaidException;
 import com.ogidazepam.e_commerce.exceptions.ProductOutOfStockException;
+import com.ogidazepam.e_commerce.exceptions.ResourceNotFoundException;
 import com.ogidazepam.e_commerce.model.*;
 import com.ogidazepam.e_commerce.repository.OrdersRepository;
 import com.ogidazepam.e_commerce.repository.PaymentRepository;
@@ -13,13 +14,15 @@ import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.checkout.Session;
 import com.stripe.param.checkout.SessionCreateParams;
-import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -43,15 +46,25 @@ public class PaymentService {
         Stripe.apiKey = STRIPE_SECRET;
 
         Orders order = ordersRepository.findByIdAndCustomerId(dto.orderId(), customer.getId())
-                .orElseThrow(() -> new EntityNotFoundException("Order not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
 
         if(order.getStatus().equals(OrderStatus.COMPLETED)){
             throw new OrderAlreadyPaidException("Your order " + order.getId() + " is already paid");
         }
 
+        Optional<Payment> existing = paymentRepository.findFirstByOrderIdAndStatusOrderByCreatedAtDesc(order.getId(), PaymentStatus.CREATED);
+        existing.ifPresent(p -> p.setStatus(PaymentStatus.EXPIRED));
+
+        List<Long> productIds = order.getOrderItemList().stream()
+                .map(OrderItem::getProductId)
+                .toList();
+
+        Map<Long, Product> productMap = productRepository.findAllById(productIds)
+                .stream()
+                .collect(Collectors.toMap(Product::getId, p -> p));
+
         for (OrderItem orderItem : order.getOrderItemList()){
-            Product product = productRepository.findById(orderItem.getProductId())
-                    .orElseThrow(() -> new EntityNotFoundException("Product not found"));
+            Product product = productMap.get(orderItem.getProductId());
 
             if (product.getQuantity() < orderItem.getQuantity()){
                 throw new ProductOutOfStockException("Not enough product quantity in the store");
@@ -107,29 +120,32 @@ public class PaymentService {
 
     public void handleSucceededEvent(String sessionId){
         Payment payment = paymentRepository.findByStripeSessionId(sessionId)
-                .orElseThrow(() -> new EntityNotFoundException("Payment not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Payment not found"));
 
         payment.setStatus(PaymentStatus.SUCCESS);
         Orders order = payment.getOrder();
         order.setStatus(OrderStatus.COMPLETED);
 
-
         // Reduce each product's quantity
+        List<Long> productIds = order.getOrderItemList().stream()
+                .map(OrderItem::getProductId)
+                .toList();
+
+        Map<Long, Product> productMap = productRepository.findAllById(productIds)
+                .stream()
+                .collect(Collectors.toMap(Product::getId, p -> p));
+
         for(OrderItem orderItem : order.getOrderItemList()){
-            Product product = productRepository.findById(orderItem.getProductId())
-                    .orElseThrow(() -> new EntityNotFoundException("Product not found"));
+            Product product = productMap.get(orderItem.getProductId());
 
             product.setQuantity(product.getQuantity() - orderItem.getQuantity());
         }
         ordersRepository.save(order);
-
-        // Clear the cart
-        cartService.clearTheCart(order.getCustomer());
     }
 
     public void handleFailedEvent(long orderId) {
         Payment payment = paymentRepository.findFirstByOrderIdAndStatusOrderByCreatedAtDesc(orderId, PaymentStatus.CREATED)
-                .orElseThrow(() -> new EntityNotFoundException("Payment not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Payment not found"));
 
         payment.setStatus(PaymentStatus.FAILED);
     }
