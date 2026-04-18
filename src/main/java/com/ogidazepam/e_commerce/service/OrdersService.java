@@ -2,6 +2,8 @@ package com.ogidazepam.e_commerce.service;
 
 import com.ogidazepam.e_commerce.dto.OrderViewDTO;
 import com.ogidazepam.e_commerce.enums.OrderStatus;
+import com.ogidazepam.e_commerce.exceptions.CartIsEmptyException;
+import com.ogidazepam.e_commerce.exceptions.ResourceNotFoundException;
 import com.ogidazepam.e_commerce.model.*;
 import com.ogidazepam.e_commerce.repository.CartRepository;
 import com.ogidazepam.e_commerce.repository.OrdersRepository;
@@ -18,13 +20,18 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class OrdersService {
 
+    private final CartService cartService;
     private final CartRepository cartRepository;
     private final OrdersRepository orderRepository;
 
     @Transactional
     public void createOrder(Customer customer) {
         Cart cart = cartRepository.findByCustomerId(customer.getId())
-                .orElseThrow(() -> new EntityNotFoundException("Cart not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Cart not found"));
+
+        if(cart.getCartItemList().isEmpty()){
+            throw new CartIsEmptyException("Cart is empty!");
+        }
 
         Orders order = new Orders();
 
@@ -48,13 +55,15 @@ public class OrdersService {
         order.setTotalAmount(total_amount);
         order.setCustomer(customer);
 
-
         orderRepository.save(order);
+        // Clear the cart
+        cartService.clearTheCart(order.getCustomer());
     }
 
     public List<OrderViewDTO> findAllOrders(Customer customer) {
-        List<Orders> orders = orderRepository.findAllByCustomerId(customer.getId());
+        List<Orders> orders = orderRepository.findAllByCustomerIdOrderByOrderDateDesc(customer.getId());
         return orders.stream().map(o -> new OrderViewDTO(
+                o.getId(),
                 o.getStatus(),
                 o.getTotalAmount()
         )).toList();
@@ -63,9 +72,10 @@ public class OrdersService {
 
     public OrderViewDTO findOrderById(long id, Customer customer) {
         Orders order = orderRepository.findByIdAndCustomerId(id, customer.getId())
-                .orElseThrow(() -> new EntityNotFoundException("Order not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
 
         return new OrderViewDTO(
+                order.getId(),
                 order.getStatus(),
                 order.getTotalAmount()
         );

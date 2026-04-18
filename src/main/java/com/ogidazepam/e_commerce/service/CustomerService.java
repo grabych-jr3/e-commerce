@@ -7,7 +7,6 @@ import com.ogidazepam.e_commerce.model.Customer;
 import com.ogidazepam.e_commerce.repository.CartRepository;
 import com.ogidazepam.e_commerce.repository.CustomerRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
