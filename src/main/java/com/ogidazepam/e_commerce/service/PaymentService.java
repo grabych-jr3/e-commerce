@@ -3,8 +3,6 @@ package com.ogidazepam.e_commerce.service;
 import com.ogidazepam.e_commerce.dto.OrderByIdDTO;
 import com.ogidazepam.e_commerce.enums.OrderStatus;
 import com.ogidazepam.e_commerce.enums.PaymentStatus;
-import com.ogidazepam.e_commerce.exceptions.OrderAlreadyPaidException;
-import com.ogidazepam.e_commerce.exceptions.ProductOutOfStockException;
 import com.ogidazepam.e_commerce.exceptions.ResourceNotFoundException;
 import com.ogidazepam.e_commerce.model.*;
 import com.ogidazepam.e_commerce.repository.OrdersRepository;
@@ -13,12 +11,10 @@ import com.ogidazepam.e_commerce.repository.ProductRepository;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.checkout.Session;
-import com.stripe.param.checkout.SessionCreateParams;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -28,94 +24,63 @@ import java.util.stream.Collectors;
 @Transactional
 public class PaymentService {
 
-    private final String STRIPE_SECRET;
-    private final CartService cartService;
+    private final StripeService stripeService;
+    private final OrderValidator orderValidator;
     private final OrdersRepository ordersRepository;
     private final ProductRepository productRepository;
     private final PaymentRepository paymentRepository;
 
-    public PaymentService(@Value("${stripe.secret}") String stripeSecret, CartService cartService, OrdersRepository ordersRepository, ProductRepository productRepository, PaymentRepository paymentRepository) {
-        STRIPE_SECRET = stripeSecret;
-        this.cartService = cartService;
+    public PaymentService(@Value("${stripe.secret}") String stripeSecret, StripeService stripeService, OrderValidator orderValidator, OrdersRepository ordersRepository, ProductRepository productRepository, PaymentRepository paymentRepository) {
+        Stripe.apiKey = stripeSecret;
+        this.orderValidator = orderValidator;
+        this.stripeService = stripeService;
         this.ordersRepository = ordersRepository;
         this.productRepository = productRepository;
         this.paymentRepository = paymentRepository;
     }
 
     public String checkout(Customer customer, OrderByIdDTO dto) throws StripeException {
-        Stripe.apiKey = STRIPE_SECRET;
-
         Orders order = ordersRepository.findByIdAndCustomerId(dto.orderId(), customer.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
 
-        if(order.getStatus().equals(OrderStatus.COMPLETED)){
-            throw new OrderAlreadyPaidException("Your order " + order.getId() + " is already paid");
-        }
+        //* Check if order has already been completed
+        orderValidator.validateNotCompleted(order);
 
-        Optional<Payment> existing = paymentRepository.findFirstByOrderIdAndStatusOrderByCreatedAtDesc(order.getId(), PaymentStatus.CREATED);
-        existing.ifPresent(p -> p.setStatus(PaymentStatus.EXPIRED));
+        //* If payment already exists, then change the status to EXPIRED
+        markAsExpiredIfPaymentExists(order.getId());
 
+        //* Check for product's stock
+        // 1. Get all productIds from OrderItem
         List<Long> productIds = order.getOrderItemList().stream()
                 .map(OrderItem::getProductId)
                 .toList();
-
+        // 2. Find all products by productIds and store them to the map
         Map<Long, Product> productMap = productRepository.findAllById(productIds)
                 .stream()
                 .collect(Collectors.toMap(Product::getId, p -> p));
 
-        for (OrderItem orderItem : order.getOrderItemList()){
-            Product product = productMap.get(orderItem.getProductId());
+        // 3. Check if each product has enough items in stock
+        orderValidator.validateStock(order.getOrderItemList(), productMap);
 
-            if (product.getQuantity() < orderItem.getQuantity()){
-                throw new ProductOutOfStockException("Not enough product quantity in the store");
-            }
-        }
+        //* Create checkout session
+        Session session = stripeService.createSession(order);
 
-        List<SessionCreateParams.LineItem> lineItems = new ArrayList<>();
-        for(OrderItem orderItem : order.getOrderItemList()){
-            lineItems.add(
-                    SessionCreateParams.LineItem.builder()
-                            .setQuantity((long) orderItem.getQuantity())
-                            .setPriceData(
-                                    SessionCreateParams.LineItem.PriceData.builder()
-                                            .setCurrency("pln")
-                                            .setUnitAmount((long)orderItem.getUnitPrice()*100)
-                                            .setProductData(
-                                                    SessionCreateParams.LineItem.PriceData.ProductData.builder()
-                                                            .setName(orderItem.getProductName())
-                                                            .build()
-                                            )
-                                            .build()
-                            )
-                            .build()
-            );
-        }
-
-        SessionCreateParams params = SessionCreateParams.builder()
-                .setMode(SessionCreateParams.Mode.PAYMENT)
-                .setSuccessUrl("http://localhost:8080/success")
-                .setCancelUrl("http://localhost:8080/cancel")
-                .putMetadata("orderId", String.valueOf(order.getId()))
-                .setPaymentIntentData(
-                        SessionCreateParams.PaymentIntentData.builder()
-                                .putMetadata("orderId", String.valueOf(order.getId()))
-                                .build()
-                )
-                .addAllLineItem(lineItems)
+        //* Save the payment
+        Payment payment = Payment.builder()
+                .stripeSessionId(session.getId())
+                .status(PaymentStatus.CREATED)
+                .amount(session.getAmountTotal())
+                .currency(session.getCurrency())
+                .order(order)
                 .build();
-
-        Session session = Session.create(params);
-
-        Payment payment = new Payment(
-                session.getId(),
-                PaymentStatus.CREATED,
-                session.getAmountTotal(),
-                session.getCurrency(),
-                order
-        );
 
         paymentRepository.save(payment);
         return session.getUrl();
+    }
+
+    private void markAsExpiredIfPaymentExists(long orderId){
+        Optional<Payment> existing = paymentRepository.findFirstByOrderIdAndStatusOrderByCreatedAtDesc(orderId, PaymentStatus.CREATED);
+        existing.ifPresent(p -> p.setStatus(PaymentStatus.EXPIRED));
     }
 
     public void handleSucceededEvent(String sessionId){

@@ -30,22 +30,17 @@ public class ProductServiceTest {
 
     @Test
     public void shouldReturnProductViewDTO_whenProductExists(){
-        long id = 1L;
-        Product product = new Product(
-                "name",
-                "description",
-                20.00,
-                10
-        );
-        when(productRepository.findById(id)).thenReturn(Optional.of(product));
-        ProductViewDTO productViewDTO = productService.findProduct(id);
+        Product product = Product.builder().id(1L).name("name").description("description").price(20.0).quantity(10).build();
+
+        when(productRepository.findById(product.getId())).thenReturn(Optional.of(product));
+        ProductViewDTO productViewDTO = productService.findProduct(product.getId());
 
         assertEquals(product.getName(), productViewDTO.name());
         assertEquals(product.getDescription(), productViewDTO.description());
         assertEquals(product.getPrice(), productViewDTO.price());
         assertEquals(product.getQuantity(), productViewDTO.quantity());
 
-        verify(productRepository).findById(id);
+        verify(productRepository).findById(product.getId());
     }
 
     @Test
@@ -61,8 +56,8 @@ public class ProductServiceTest {
     public void shouldReturnMappedDtos_whenProductsFoundByName(){
         String name = "name";
 
-        Product p1 = new Product("name1", "description", 20.00, 10);
-        Product p2 = new Product("name2", "description", 20.00, 10);
+        Product p1 = Product.builder().id(1L).name("name1").description("description1").price(20.0).quantity(10).build();
+        Product p2 = Product.builder().id(2L).name("name2").description("description2").price(20.0).quantity(10).build();
 
         when(productRepository.findAllByNameContainingIgnoreCase(name)).thenReturn(List.of(p1, p2));
 

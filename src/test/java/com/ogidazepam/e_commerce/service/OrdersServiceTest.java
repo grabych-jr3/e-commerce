@@ -43,18 +43,15 @@ public class OrdersServiceTest {
     @Test
     public void shouldCreateOrder(){
         // Arrange
-        Customer customer = new Customer();
-        customer.setId(1L);
+        Customer customer = Customer.builder().id(1L).build();
 
-        Product product1 = new Product("name1", "description1", 20.0, 10);
-        product1.setId(1L);
-        Product product2 = new Product("name2", "description2", 5, 10);
-        product2.setId(2L);
+        Product product1 = Product.builder().id(1L).name("name1").description("description1").price(10.0).quantity(10).build();
+        Product product2 = Product.builder().id(2L).name("name2").description("description2").price(15.0).quantity(10).build();
 
-        Cart cart = new Cart(customer);
+        Cart cart = Cart.builder().customer(customer).build();
 
-        CartItem item1 = new CartItem(4, product1.getPrice(), cart, product1);
-        CartItem item2 = new CartItem(2, product2.getPrice(), cart, product2);
+        CartItem item1 = CartItem.builder().quantity(4).unitPrice(product1.getPrice()).cart(cart).product(product1).build();
+        CartItem item2 = CartItem.builder().quantity(2).unitPrice(product2.getPrice()).cart(cart).product(product2).build();
 
         cart.setCartItemList(List.of(item1, item2));
 
@@ -123,10 +120,8 @@ public class OrdersServiceTest {
         Customer customer = new Customer();
         customer.setId(1L);
 
-        Orders order1 = new Orders(OrderStatus.COMPLETED, 120.0, customer);
-        order1.setId(1L);
-        Orders order2 = new Orders(OrderStatus.PROCESSING, 1000.0, customer);
-        order2.setId(2L);
+        Orders order1 = Orders.builder().id(1L).status(OrderStatus.COMPLETED).totalAmount(120.0).customer(customer).build();
+        Orders order2 = Orders.builder().id(2L).status(OrderStatus.PROCESSING).totalAmount(1000.0).customer(customer).build();
 
         List<Orders> orders = List.of(order1, order2);
 
@@ -167,10 +162,7 @@ public class OrdersServiceTest {
         Customer customer = new Customer();
         customer.setId(1L);
 
-        Orders order = new Orders();
-        order.setId(1L);
-        order.setStatus(OrderStatus.PROCESSING);
-        order.setTotalAmount(100.0);
+        Orders order = Orders.builder().id(1L).status(OrderStatus.PROCESSING).totalAmount(100.0).build();
 
         when(ordersRepository.findByIdAndCustomerId(order.getId(), customer.getId()))
                 .thenReturn(Optional.of(order));
