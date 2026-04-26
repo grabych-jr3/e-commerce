@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Transactional(readOnly = true)
@@ -47,18 +48,24 @@ public class CartService {
         Product product = productRepository.findById(dto.productId())
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
-        if (product.getQuantity() == 0){
+        Optional<CartItem> existingCartItem = cartItemRepository.findByCartAndProduct(cart, product);
+
+        int currentQuantity = existingCartItem.map(CartItem::getQuantity).orElse(0);
+        if (product.getQuantity() <= currentQuantity){
             throw new ProductOutOfStockException("No items left");
         }
 
-        CartItem cartItem = new CartItem(
-                1,
-                product.getPrice(),
-                cart,
-                product
-        );
-
-        cartItemRepository.save(cartItem);
+        if (existingCartItem.isPresent()){
+            existingCartItem.get().setQuantity(existingCartItem.get().getQuantity() + 1);
+        }else {
+            CartItem cartItem = new CartItem(
+                    1,
+                    product.getPrice(),
+                    cart,
+                    product
+            );
+            cartItemRepository.save(cartItem);
+        }
     }
 
     @Transactional
