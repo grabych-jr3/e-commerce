@@ -42,12 +42,23 @@ public class SecurityConfig {
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/auth/**", "/api/v1/products/**").permitAll()
+                        // PUBLIC endpoints
+                        .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/api/v1/payments/webhook").permitAll()
-                        .requestMatchers("/api/v1/orders/**", "/api/v1/cart/**", "/api/v1/payments/**").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/products/**").hasRole(UserRole.ADMIN.name())
-                        .requestMatchers(HttpMethod.PATCH, "/api/v1/products/**").hasRole(UserRole.ADMIN.name())
-                        .requestMatchers(HttpMethod.DELETE, "/api/v1/products/**").hasRole(UserRole.ADMIN.name())
+                        // PRODUCTS - GET permitAll
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/v1/products",
+                                "/api/v1/products/**"
+                        ).permitAll()
+                        //  PRODUCTS - ADMIN only
+                        .requestMatchers(HttpMethod.POST, "/api/v1/products/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/products/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/products/**").hasRole("ADMIN")
+                        // Others
+                        .requestMatchers("/api/v1/orders/**",
+                                "/api/v1/cart/**",
+                                "/api/v1/payments/**").authenticated()
+
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();

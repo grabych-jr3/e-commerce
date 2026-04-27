@@ -2,6 +2,7 @@ package com.ogidazepam.e_commerce.controller;
 
 import com.ogidazepam.e_commerce.dto.OrderByIdDTO;
 import com.ogidazepam.e_commerce.service.PaymentService;
+import com.ogidazepam.e_commerce.service.StripeService;
 import com.ogidazepam.e_commerce.util.CustomUserDetails;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.exception.StripeException;
@@ -26,6 +27,7 @@ public class PaymentController {
     @Value("${stripe.webhook.signing.secret}")
     private String signingSecret;
     private final PaymentService paymentService;
+    private final StripeService stripeService;
 
     @PostMapping("/checkout")
     public String checkout(@AuthenticationPrincipal CustomUserDetails userDetails,
@@ -35,13 +37,8 @@ public class PaymentController {
 
     @PostMapping("/webhook")
     public ResponseEntity<Void> handleWebhookEvent(@RequestBody String payload,
-                                                   @RequestHeader("Stripe-Signature") String header){
-        Event event;
-        try {
-            event = Webhook.constructEvent(payload, header, signingSecret);
-        }catch (SignatureVerificationException e){
-            return ResponseEntity.ok().build();
-        }
+                                                   @RequestHeader("Stripe-Signature") String header) throws SignatureVerificationException {
+        Event event = stripeService.constructEvent(payload, header);
 
         switch (event.getType()) {
 
