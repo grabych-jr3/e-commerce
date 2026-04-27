@@ -2,15 +2,22 @@ package com.ogidazepam.e_commerce.service;
 
 import com.ogidazepam.e_commerce.model.OrderItem;
 import com.ogidazepam.e_commerce.model.Orders;
+import com.stripe.exception.SignatureVerificationException;
 import com.stripe.exception.StripeException;
+import com.stripe.model.Event;
 import com.stripe.model.checkout.Session;
+import com.stripe.net.Webhook;
 import com.stripe.param.checkout.SessionCreateParams;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
 public class StripeService {
+
+    @Value("${stripe.webhook.signing.secret}")
+    private String signingSecret;
 
     private SessionCreateParams createSessionCreateParams(long orderId, List<SessionCreateParams.LineItem> lineItems){
         return SessionCreateParams.builder()
@@ -53,5 +60,9 @@ public class StripeService {
         SessionCreateParams params = createSessionCreateParams(order.getId(), lineItems);
 
         return Session.create(params);
+    }
+
+    public Event constructEvent(String payload, String header) throws SignatureVerificationException {
+        return Webhook.constructEvent(payload, header, signingSecret);
     }
 }
