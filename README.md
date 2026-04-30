@@ -22,7 +22,7 @@ Roadmap challange - https://roadmap.sh/projects/ecommerce-api
 ## :unlock: Endpoints
 ### Auth
 + POST /api/v1/auth/register - register a user
-+ POST /api/v1/auth/login - sign in user
++ POST /api/v1/auth/login - returns JWT
 
 ### Product
 + GET /api/v1/products - get all products
